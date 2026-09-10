@@ -1,3 +1,6 @@
-import { Elysia } from 'elysia';
+import { app } from './app';
+import { env } from './config/env';
 
-new Elysia().get('/', 'hello').get('/world', 'world').listen(3000);
+app.listen(env.PORT);
+
+console.log('Server is running on port', env.PORT);
