@@ -24,3 +24,11 @@ export const loginBody = t.Object({
     minLength: 8,
   }),
 });
+
+export const refreshTokenBody = t.Object({
+  refreshToken: t.String(),
+});
+
+export const logoutBody = t.Object({
+  refreshToken: t.Optional(t.String()),
+});

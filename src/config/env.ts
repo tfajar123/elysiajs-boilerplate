@@ -14,4 +14,5 @@ export const env = {
   JWT_REFRESH_SECRET: requiredEnv('JWT_REFRESH_SECRET'),
   ACCESS_TOKEN_EXPIRES_IN: requiredEnv('ACCESS_TOKEN_EXPIRES_IN'),
   REFRESH_TOKEN_EXPIRES_IN: requiredEnv('REFRESH_TOKEN_EXPIRES_IN'),
+  REDIS_URL: Bun.env.REDIS_URL ?? 'redis://localhost:6379',
 };

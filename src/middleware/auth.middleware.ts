@@ -1,5 +1,6 @@
 import Elysia from 'elysia';
 import { verifyAccessToken } from '../utils/jwt';
+import { redisService } from '../utils/redis';
 
 export const authMiddleware = new Elysia().derive(
   { as: 'scoped' },
@@ -17,8 +18,16 @@ export const authMiddleware = new Elysia().derive(
 
     try {
       const { payload } = await verifyAccessToken(token);
-      if (!payload.sub) {
+      if (!payload.sub || !payload.jti) {
         throw new Error('Invalid token');
+      }
+
+      // Cek Redis: apakah token sudah di-revoke (logout)?
+      const isBlacklisted = await redisService.isAccessTokenBlacklisted(
+        payload.jti,
+      );
+      if (isBlacklisted) {
+        throw new Error('Token has been revoked');
       }
 
       return {
