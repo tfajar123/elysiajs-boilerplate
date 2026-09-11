@@ -45,6 +45,7 @@ elysia/app
     ├── modules/                # ALL features/domains live here (feature modules)
     │   ├── auth/               # primary reference module
     │   └── users/
+    ├── test/                   # shared test helpers/fixtures (fake-redis.ts)
     └── utils/                  # reusable helpers shared across modules
         ├── jwt.ts
         ├── logger.ts
@@ -232,13 +233,30 @@ Finally: register the routes in `src/app.ts` (`.use(ordersRoutes)`); if you adde
 
 ---
 
-## 10. Useful Commands
+## 10. Testing
+
+- Tests run with Bun's built-in runner (`bun:test`). Test files are colocated next to the code they cover: `<name>.test.ts` (e.g. `src/utils/pagination.test.ts`).
+- Shared test helpers/fixtures live in `src/test/` (e.g. `fake-redis.ts` — an in-memory Redis used to mock the connection).
+- Unit tests must be hermetic:
+  - Mock infrastructure at the boundary with `mock.module(...)`: repositories (DB access) and `config/redis` (Redis connection). Never touch a real DB or Redis in unit tests.
+  - Keep dependency-free utils REAL in service tests: `utils/jwt`, `utils/password`, `utils/pagination`, `utils/response`, and `utils/redis` (running on top of the fake connection).
+  - Register all `mock.module(...)` factories BEFORE dynamically importing the module under test (`const { x } = await import('./x')`).
+  - Use `mock()` from `bun:test` for repository functions; reset state in `beforeEach` (`resetFakeRedis()`, `mockClear()`).
+  - Tests only need env fallbacks when the module under test reads `env.ts` (JWT secrets, token expiry, DB URL) — set them with `process.env.X ??= '...'` before the dynamic imports.
+- Every bug fix / behavior change ships with a corresponding test.
+
+---
+
+## 11. Useful Commands
 
 ```bash
-bun run dev                # start server (watch mode)
-bun x tsc --noEmit         # typecheck
-bun run db:generate        # generate drizzle migrations
-bun run db:migrate         # run migrations
-bun run db:push            # push schema directly to DB
-docker compose up -d       # start postgres + redis
+bun run dev                            # start server (watch mode)
+bun test                               # run all unit tests
+bun test src/utils/pagination.test.ts  # run a single test file
+bun run test:coverage                  # run tests with coverage
+bun x tsc --noEmit                     # typecheck
+bun run db:generate                    # generate drizzle migrations
+bun run db:migrate                     # run migrations
+bun run db:push                        # push schema directly to DB
+docker compose up -d                   # start postgres + redis
 ```
