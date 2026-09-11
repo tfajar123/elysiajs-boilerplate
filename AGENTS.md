@@ -48,6 +48,7 @@ elysia/app
     └── utils/                  # reusable helpers shared across modules
         ├── jwt.ts
         ├── logger.ts
+        ├── pagination.ts       # pagination: parsePagination, paginate, paginationQuery
         ├── password.ts
         ├── redis.ts            # per-infrastructure service helpers (NOT raw connections)
         └── response.ts
@@ -113,6 +114,25 @@ return response.error(data, 'Message');
 ```
 
 Shape: `{ success: boolean, message: string, data: T }`.
+
+### Paginated endpoints
+
+List endpoints MUST use the pagination helpers from `src/utils/pagination.ts` and return `{ items, pagination }` inside `data`:
+
+```ts
+// validation: spread the shared query properties
+export const listUsersQuery = t.Object({ ...paginationQuery });
+
+// service: parse params, fetch a page + total count, build meta
+async listUsers(query: { page?: number; limit?: number }) {
+  const params = parsePagination(query);
+  const { items, totalItems } = await usersRepository.findUsers(params);
+  return paginate(items, totalItems, params);
+}
+```
+
+- The repository returns `{ items, totalItems }` and uses `params.limit` / `params.offset` (count query runs in parallel via `Promise.all`).
+- The shared `paginationQuery` TypeBox properties enforce `page >= 1` and `1 <= limit <= 100` at the route level; `parsePagination` additionally clamps values as a safety net for programmatic calls.
 
 ---
 
