@@ -28,7 +28,7 @@ export const authController = {
     const authorization: string = headers.authorization;
     const [, token] = authorization.split(' ');
 
-    // Ambil jti & exp dari access token untuk diblacklist di Redis
+    // Get the jti & exp from the access token to blacklist it in Redis
     const { payload } = await verifyAccessToken(token);
 
     if (!payload.jti) {

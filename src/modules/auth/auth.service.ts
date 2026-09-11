@@ -34,7 +34,7 @@ export const authServices = {
     const accessToken = await createAccessToken(user.id);
     const refreshToken = await createRefreshToken(user.id);
 
-    // Simpan refresh token ke Redis (whitelist session) dengan TTL otomatis
+    // Store the refresh token in Redis (session whitelist) with an automatic TTL
     await redisService.storeRefreshToken(
       refreshToken.jti,
       user.id,
@@ -52,7 +52,7 @@ export const authServices = {
     };
   },
 
-  /** Rotasi refresh token: verifikasi token lama di Redis, lalu terbitkan token baru */
+  /** Refresh token rotation: verify the old token against Redis, then issue new tokens */
   async refresh(refreshToken: string) {
     let payload;
     try {
@@ -66,7 +66,7 @@ export const authServices = {
       throw new Error('Invalid refresh token');
     }
 
-    // Refresh token harus terdaftar di Redis (belum expired / belum di-revoke)
+    // The refresh token must be registered in Redis (not expired / not revoked)
     const userId = await redisService.getRefreshToken(payload.jti);
     if (!userId || userId !== payload.sub) {
       throw new Error('Refresh token revoked or expired');
@@ -77,7 +77,7 @@ export const authServices = {
       throw new Error('User not found');
     }
 
-    // Hapus session lama, terbitkan pasangan token baru
+    // Delete the old session, issue a new token pair
     await redisService.deleteRefreshToken(payload.jti);
 
     const newAccessToken = await createAccessToken(user.id);
@@ -100,14 +100,14 @@ export const authServices = {
     };
   },
 
-  /** Logout: revoke refresh token di Redis + blacklist access token saat ini */
+  /** Logout: revoke the refresh token in Redis + blacklist the current access token */
   async logout(
     userId: string,
     accessTokenJti: string,
     accessTokenExp: number,
     refreshToken?: string,
   ) {
-    // Hapus semua refresh token milik user (revoke semua session di device ini)
+    // Delete all refresh tokens owned by the user (revoke this device's session)
     if (refreshToken) {
       try {
         const verified = await verifyRefreshToken(refreshToken);
@@ -115,11 +115,11 @@ export const authServices = {
           await redisService.deleteRefreshToken(verified.payload.jti);
         }
       } catch {
-        // refresh token tidak valid, abaikan
+        // invalid refresh token, ignore
       }
     }
 
-    // Blacklist access token sampai masa berlakunya habis
+    // Blacklist the access token until it expires
     await redisService.blacklistAccessToken(
       accessTokenJti,
       accessTokenExp - Math.floor(Date.now() / 1000),

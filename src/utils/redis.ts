@@ -1,20 +1,20 @@
 import { redis } from '../config/redis';
 
 /**
- * Redis helpers untuk session / token management pada modul auth.
+ * Redis helpers for session / token management in the auth module.
  *
  * Key patterns:
- * - refresh-token:{jti}  -> userId (whitelist refresh token, TTL = masa berlaku token)
- * - blacklist:{jti}      -> '1' (access token yang di-revoke, TTL = sisa umur token)
+ * - refresh-token:{jti}  -> userId (refresh token whitelist, TTL = token lifetime)
+ * - blacklist:{jti}      -> '1' (revoked access token, TTL = remaining token lifetime)
  */
 
 const REFRESH_TOKEN_PREFIX = 'refresh-token:';
 const BLACKLIST_PREFIX = 'blacklist:';
 
-/** "15m" | "7d" | "1h" -> detik */
+/** "15m" | "7d" | "1h" -> seconds */
 export const parseExpiryToSeconds = (expiry: string): number => {
   const match = expiry.match(/^(\d+)([smhd])$/);
-  if (!match) return 60 * 60; // fallback 1 jam
+  if (!match) return 60 * 60; // fallback: 1 hour
 
   const value = Number(match[1]);
   const unit = match[2];
@@ -30,31 +30,31 @@ export const parseExpiryToSeconds = (expiry: string): number => {
 };
 
 export const redisService = {
-  /** Simpan refresh token (whitelist) berdasarkan jti dengan TTL otomatis */
+  /** Store a refresh token (whitelist) by jti with an automatic TTL */
   async storeRefreshToken(jti: string, userId: string, ttlSeconds: number) {
     await redis.set(REFRESH_TOKEN_PREFIX + jti, userId, 'EX', ttlSeconds);
   },
 
-  /** Ambil userId pemilik refresh token, null jika tidak ada / sudah expired */
+  /** Get the userId owning the refresh token, null if missing / expired */
   async getRefreshToken(jti: string): Promise<string | null> {
     return redis.get(REFRESH_TOKEN_PREFIX + jti);
   },
 
-  /** Hapus refresh token (dipakai saat logout / rotasi token) */
+  /** Delete a refresh token (used on logout / token rotation) */
   async deleteRefreshToken(jti: string) {
     await redis.del(REFRESH_TOKEN_PREFIX + jti);
   },
 
   /**
-   * Blacklist access token sampai masa berlakunya habis,
-   * sehingga token tidak bisa dipakai lagi meski belum expired.
+   * Blacklist an access token until it expires,
+   * so it can no longer be used even though it is not expired yet.
    */
   async blacklistAccessToken(jti: string, ttlSeconds: number) {
-    if (ttlSeconds <= 0) return; // token sudah expired, tidak perlu blacklist
+    if (ttlSeconds <= 0) return; // token already expired, no need to blacklist
     await redis.set(BLACKLIST_PREFIX + jti, '1', 'EX', ttlSeconds);
   },
 
-  /** Cek apakah access token jti sudah di-revoke (logout) */
+  /** Check whether an access token jti has been revoked (logout) */
   async isAccessTokenBlacklisted(jti: string): Promise<boolean> {
     const result = await redis.get(BLACKLIST_PREFIX + jti);
     return result === '1';

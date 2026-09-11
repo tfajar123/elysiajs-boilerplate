@@ -20,7 +20,7 @@ export const createAccessToken = async (userId: string) => {
   return {
     token,
     jti,
-    expiresAt: payload.exp ?? 0, // unix detik
+    expiresAt: payload.exp ?? 0, // unix seconds
   };
 };
 
@@ -40,7 +40,7 @@ export const createRefreshToken = async (userId: string) => {
   return {
     token,
     jti,
-    expiresAt: payload.exp ?? 0, // unix detik
+    expiresAt: payload.exp ?? 0, // unix seconds
   };
 };
 export const verifyAccessToken = async (token: string) => {

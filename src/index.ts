@@ -1,6 +1,6 @@
 import { app } from './app';
 import { env } from './config/env';
-import './config/redis'; // inisialisasi koneksi Redis
+import './config/redis'; // initialize the Redis connection
 
 app.listen(env.PORT);
 

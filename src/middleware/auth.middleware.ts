@@ -22,7 +22,7 @@ export const authMiddleware = new Elysia().derive(
         throw new Error('Invalid token');
       }
 
-      // Cek Redis: apakah token sudah di-revoke (logout)?
+      // Check Redis: has the token been revoked (logout)?
       const isBlacklisted = await redisService.isAccessTokenBlacklisted(
         payload.jti,
       );
