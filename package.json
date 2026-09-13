@@ -15,6 +15,8 @@
     "argon2": "^0.45.1",
     "drizzle-orm": "^0.45.2",
     "elysia": "latest",
+    "elysia-helmet": "^3.1.0",
+    "elysia-rate-limit": "4.6.3",
     "ioredis": "^6.0.0",
     "jose": "^6.2.12",
     "pino": "^10.3.1",

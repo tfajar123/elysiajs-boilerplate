@@ -4,11 +4,13 @@ import Elysia from 'elysia';
 import { authRoutes } from './modules/auth/auth.route';
 import { usersRoutes } from './modules/users/users.route';
 import { loggerMiddleware } from './middleware/logger.middleware';
+import { helmet } from 'elysia-helmet';
 
 export const app = new Elysia({
   prefix: '/api/v1',
 })
   .use(cors())
+  .use(helmet())
   .use(
     swagger({
       documentation: {
